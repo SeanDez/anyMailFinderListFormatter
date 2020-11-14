@@ -15,7 +15,7 @@ inputFiles.forEach((fileName: string) => {
   const csvContent = csvParse(rawCsv);
   // current file's data is captured for use
 
-  csvContent.forEach((row: any) => {
+  const allWebsiteEmailPairs: object[][] = csvContent.map((row: any) => {
     const [website, emailsJoined] = row;
     let emails: string[];
 
@@ -24,8 +24,15 @@ inputFiles.forEach((fileName: string) => {
       emails = emailsJoined.split(', ');
     } else { return; }
 
-    const allWebsiteEmailPairs = emails!.map((email: string) => { website, email });
+    const websiteEmailPairs: object[] = emails!.map((email: string) => ({ website, email }));
+
+    return websiteEmailPairs;
   });
+
+  const noUndefined = allWebsiteEmailPairs.filter((maybeAnArray: object[] | undefined) => Array.isArray(maybeAnArray));
+  const flattened = noUndefined.concat(...noUndefined);
+
+  console.log('flattened', flattened);
 });
 
 // ------------------------- Write new output file
