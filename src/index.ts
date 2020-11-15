@@ -47,26 +47,45 @@ fileContentsRaw.forEach((rowOrList: object[]) => {
   }
 });
 
-// do final uncaught array check
+// uncaught array check
 fileContentsFlattened.forEach((row: object, index: number) => {
   if (Array.isArray(row)) { console.log('nested array detected: ', index, row); }
 });
 
 // ------------------------- Write new output file
 
-// console.log('fileContentsRaw[0]', fileContentsRaw[0]);
-// console.log('fileContentsRaw[1]', fileContentsRaw[1]);
+const eachRowAsString = fileContentsFlattened.reduce(
+  (accumulator: string, currentValue: object, index: number) => {
+    if (Object.keys(currentValue).length === 0) { return accumulator; }
 
-// const eachRowAsString = fileContentsRaw.reduce((accumulator: string, currentVal: object) => {
-//   const { company, email, website } = currentVal;
-//   const rowAsString = `${company},${email},${website}\n`;
-//   return accumulator + rowAsString;
-// }, '');
+    // update column headers
+    if (index === 0) {
+      return 'company,email,website\n';
+    }
 
-// console.log('eachRowAsString', eachRowAsString);
+    // @ts-ignore
+    const { company, email, website } = currentValue;
+    if (
+      typeof company === 'undefined'
+      || typeof email === 'undefined'
+      || typeof website === 'undefined'
+    ) { return accumulator; }
 
-const firstValue = '\ufeff'; // BOM
+    return `${accumulator}${company},${email},${website}\n`;
+  }, '',
+);
 
+console.log('eachRowAsString', eachRowAsString);
+
+
+const csvHeader = '\ufeff'; // BOM
+const allCsvContents = `${csvHeader}${eachRowAsString}`;
+
+async function writeCsvFile(targetFilePath: string, fullFileContents: string) {
+  await fs.writeFileSync(targetFilePath, fullFileContents);
+}
+
+writeCsvFile();
 
 // const firstValue = '\ufeff'; // BOM
 // const fileBody: string = [
@@ -75,8 +94,4 @@ const firstValue = '\ufeff'; // BOM
 // ].join('\n');
 // const fullFileContents: string = firstValue + fileBody;
 
-// async function writeCsvFile() {
-//   await fs.writeFileSync(targetFilePath, fullFileContents);
-// }
 
-// writeCsvFile();
