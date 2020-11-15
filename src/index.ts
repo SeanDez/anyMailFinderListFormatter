@@ -9,14 +9,14 @@ const inputFiles: string[] = fs.readdirSync(inputFolder);
 // ----- error handling if no inputs
 if (inputFiles.length === 0) { throw new Error('No input files detected'); }
 
-inputFiles.forEach((fileName: string) => {
+const fileContentsRaw = inputFiles.map((fileName: string) => {
   const currentFilePath = path.join(inputFolder, fileName);
   const rawCsv = fs.readFileSync(currentFilePath);
   const csvContent = csvParse(rawCsv);
   // current file's data is captured for use
 
-  const allWebsiteEmailPairs: object[][] = csvContent.map((row: any) => {
-    const [website, emailsJoined] = row;
+  const allRecords: object[][] = csvContent.map((row: any) => {
+    const [company, website, emailsJoined] = row;
     let emails: string[];
 
     // return if no emails. if at least one, split into array
@@ -24,18 +24,49 @@ inputFiles.forEach((fileName: string) => {
       emails = emailsJoined.split(', ');
     } else { return; }
 
-    const websiteEmailPairs: object[] = emails!.map((email: string) => ({ website, email }));
+    const records: object[] = emails!.map((email: string) => ({ company, website, email }));
 
-    return websiteEmailPairs;
+    return records;
   });
 
-  const noUndefined = allWebsiteEmailPairs.filter((maybeAnArray: object[] | undefined) => Array.isArray(maybeAnArray));
+  const noUndefined = allRecords
+    .filter((maybeAnArray: object[] | undefined) => Array.isArray(maybeAnArray));
   const flattened = noUndefined.concat(...noUndefined);
 
-  console.log('flattened', flattened);
+  return flattened;
+})[0];
+
+const fileContentsFlattened: object[] = [];
+fileContentsRaw.forEach((rowOrList: object[]) => {
+  if (Array.isArray(rowOrList)) {
+    rowOrList.forEach((nestedRow: object) => {
+      fileContentsFlattened.push(nestedRow);
+    });
+  } else {
+    fileContentsFlattened.push(rowOrList);
+  }
+});
+
+// do final uncaught array check
+fileContentsFlattened.forEach((row: object, index: number) => {
+  if (Array.isArray(row)) { console.log('nested array detected: ', index, row); }
 });
 
 // ------------------------- Write new output file
+
+// console.log('fileContentsRaw[0]', fileContentsRaw[0]);
+// console.log('fileContentsRaw[1]', fileContentsRaw[1]);
+
+// const eachRowAsString = fileContentsRaw.reduce((accumulator: string, currentVal: object) => {
+//   const { company, email, website } = currentVal;
+//   const rowAsString = `${company},${email},${website}\n`;
+//   return accumulator + rowAsString;
+// }, '');
+
+// console.log('eachRowAsString', eachRowAsString);
+
+const firstValue = '\ufeff'; // BOM
+
 
 // const firstValue = '\ufeff'; // BOM
 // const fileBody: string = [
