@@ -34,10 +34,14 @@ const fileContentsRaw = inputFiles.map((fileName: string) => {
   const flattened = noUndefined.concat(...noUndefined);
 
   return flattened;
-})[0];
+});
+// each file is a subarray
+
+// @ts-ignore
+const allFilesInOne = [].concat(...fileContentsRaw);
 
 const fileContentsFlattened: object[] = [];
-fileContentsRaw.forEach((rowOrList: object[]) => {
+allFilesInOne.forEach((rowOrList: object[]) => {
   if (Array.isArray(rowOrList)) {
     rowOrList.forEach((nestedRow: object) => {
       fileContentsFlattened.push(nestedRow);
@@ -71,21 +75,30 @@ const eachRowAsString = fileContentsFlattened.reduce(
       || typeof website === 'undefined'
     ) { return accumulator; }
 
-    return `${accumulator}${company},${email},${website}\n`;
+    const lastIndex = fileContentsFlattened.length - 1;
+    const isLastIndex = index === lastIndex;
+    const newLineIfNotLastIndex = isLastIndex === false && '\n';
+
+    return `${accumulator}${company},${email},${website}${newLineIfNotLastIndex}`;
   }, '',
 );
 
-console.log('eachRowAsString', eachRowAsString);
+// console.log('eachRowAsString', eachRowAsString);
 
+// ------------------ Build and write output file
 
 const csvHeader = '\ufeff'; // BOM
 const allCsvContents = `${csvHeader}${eachRowAsString}`;
+
+const outputFolder = path.join(__dirname, '../output');
+const outputFileName = process.argv[2];
+const fullOutputFilePath = path.join(outputFolder, outputFileName);
 
 async function writeCsvFile(targetFilePath: string, fullFileContents: string) {
   await fs.writeFileSync(targetFilePath, fullFileContents);
 }
 
-writeCsvFile();
+writeCsvFile(fullOutputFilePath, allCsvContents);
 
 // const firstValue = '\ufeff'; // BOM
 // const fileBody: string = [
@@ -93,5 +106,3 @@ writeCsvFile();
 //   'b,2\n', // Second record
 // ].join('\n');
 // const fullFileContents: string = firstValue + fileBody;
-
-
